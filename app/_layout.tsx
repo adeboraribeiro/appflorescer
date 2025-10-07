@@ -78,6 +78,18 @@ class ErrorCatcher extends React.Component<{ label?: string; children?: React.Re
           <Text style={styles.errTitle}>Runtime error</Text>
           <Text style={styles.errLabel}>{this.props.label}</Text>
           <Text style={styles.errMsg}>{String(this.state.error?.message ?? this.state.error)}</Text>
+          <Text style={styles.errStack} selectable>{String(this.state.error?.stack ?? '')}</Text>
+          <Text style={styles.copyHint} onPress={() => {
+            try {
+              // Use the React Native clipboard API if available
+              // eslint-disable-next-line @typescript-eslint/no-var-requires
+              const Clipboard = require('react-native').Clipboard || require('@react-native-clipboard/clipboard');
+              const payload = `Error: ${String(this.state.error?.message)}\n\nStack:\n${String(this.state.error?.stack ?? '')}`;
+              if (Clipboard && typeof Clipboard.setString === 'function') Clipboard.setString(payload);
+            } catch (e) {
+              // ignore
+            }
+          }}>Tap to copy error details</Text>
         </View>
       );
     }
@@ -91,6 +103,8 @@ const styles = StyleSheet.create({
   errTitle: { fontSize: 20, fontWeight: '700', marginBottom: 8, color: '#b91c1c' },
   errLabel: { fontSize: 14, marginBottom: 8, color: '#374151' },
   errMsg: { fontSize: 13, color: '#111827' },
+  errStack: { fontSize: 12, color: '#6B7280', marginTop: 12, fontFamily: undefined },
+  copyHint: { fontSize: 13, color: '#2563EB', marginTop: 12, textDecorationLine: 'underline' },
 });
 
 export default function RootLayout() {

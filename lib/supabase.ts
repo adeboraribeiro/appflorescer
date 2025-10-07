@@ -2,46 +2,97 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import 'react-native-url-polyfill/auto';
 
-const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL
-const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY
-
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error('Missing Supabase environment variables')
-}
+const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
+const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
 
 // allow reassigning the client when reconnecting
-export let supabase: SupabaseClient = createClient(supabaseUrl!, supabaseAnonKey!, {
-  auth: {
-    storage: AsyncStorage,
-    autoRefreshToken: true,
-    persistSession: true,
-    detectSessionInUrl: false,
-  },
-})
+// Export as `any` to keep this module resilient when env vars are missing
+export let supabase: any = null;
 
 // guard to avoid recreating the client too often (prevents auth refresh storms)
-let _lastReconnectAt = 0
-const MIN_RECONNECT_INTERVAL_MS = 30_000 // 30s
+let _lastReconnectAt = 0;
+const MIN_RECONNECT_INTERVAL_MS = 30_000; // 30s
 
-export function reconnectSupabase() {
-  const now = Date.now()
-  if (now - _lastReconnectAt < MIN_RECONNECT_INTERVAL_MS) {
-    console.warn('reconnectSupabase: skipped (rate-limited)')
-    return false
-  }
-  _lastReconnectAt = now
-
-  console.log('reconnectSupabase: recreating Supabase client')
-  // Recreate the client instance (useful if the network stack needs a fresh client)
-  supabase = createClient(supabaseUrl!, supabaseAnonKey!, {
+function createRealClient() {
+  return createClient(supabaseUrl!, supabaseAnonKey!, {
     auth: {
       storage: AsyncStorage,
       autoRefreshToken: true,
       persistSession: true,
       detectSessionInUrl: false,
     },
-  })
-  return true
+  });
+}
+
+// If environment variables are present, create a real Supabase client.
+// Otherwise, provide a safe no-op fallback client that doesn't throw during import.
+if (supabaseUrl && supabaseAnonKey) {
+  try {
+    supabase = createRealClient();
+  } catch (e) {
+    // If client creation fails, fall back to a no-op client rather than throwing
+    // to avoid crashing the app at startup.
+    // eslint-disable-next-line no-console
+    console.warn('supabase: failed to create real client, falling back to noop client', e);
+  }
+}
+
+if (!supabase) {
+  // Minimal no-op supabase client to avoid synchronous throws on import.
+  // Methods return benign shapes expected by the codebase or simple no-ops.
+  const noopAsync = async () => ({ data: null, error: null });
+  const noopAuth = {
+    getSession: async () => ({ data: { session: null } }),
+    getUser: async () => ({ data: { user: null } }),
+    onAuthStateChange: (_cb: any) => ({ data: { subscription: { unsubscribe: () => {} } } }),
+    signInWithPassword: async () => ({ data: null, error: new Error('supabase not configured') }),
+    signUp: async () => ({ data: null, error: new Error('supabase not configured') }),
+    signOut: async () => ({ error: null }),
+  };
+
+  const noopFromBuilder = () => {
+    const builder: any = {
+      select: async () => ({ data: null, error: new Error('supabase not configured') }),
+      maybeSingle: async () => ({ data: null, error: new Error('supabase not configured') }),
+      single: async () => ({ data: null, error: new Error('supabase not configured') }),
+      eq: function () { return this; },
+    };
+    return builder;
+  };
+
+  supabase = {
+    auth: noopAuth,
+    from: (_: string) => noopFromBuilder(),
+    rpc: async () => ({ data: null, error: new Error('supabase not configured') }),
+    // allow reconnect logic to attempt creating a real client later
+  };
+}
+
+export function reconnectSupabase() {
+  const now = Date.now();
+  if (now - _lastReconnectAt < MIN_RECONNECT_INTERVAL_MS) {
+    // eslint-disable-next-line no-console
+    console.warn('reconnectSupabase: skipped (rate-limited)');
+    return false;
+  }
+  _lastReconnectAt = now;
+
+  if (!supabaseUrl || !supabaseAnonKey) {
+    // eslint-disable-next-line no-console
+    console.warn('reconnectSupabase: supabase env vars missing; cannot recreate client');
+    return false;
+  }
+
+  try {
+    // eslint-disable-next-line no-console
+    console.log('reconnectSupabase: recreating Supabase client');
+    supabase = createRealClient();
+    return true;
+  } catch (e) {
+    // eslint-disable-next-line no-console
+    console.warn('reconnectSupabase: failed to recreate client', e);
+    return false;
+  }
 }
 
 // Test connection
