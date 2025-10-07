@@ -1,0 +1,4 @@
+0000000000000000000000000000000000000000 7dff631ceac2750fac0540cb05f4abb378725b32 adebbieribeiro <debora-ribeiro-pereira@hotmail.com> 1754966530 -0700	commit (initial): Initial commit of Florescer API server
+7dff631ceac2750fac0540cb05f4abb378725b32 7dff631ceac2750fac0540cb05f4abb378725b32 adebbieribeiro <debora-ribeiro-pereira@hotmail.com> 1754967047 -0700	Branch: renamed refs/heads/master to refs/heads/main
+7dff631ceac2750fac0540cb05f4abb378725b32 04f9a37bb168b98233683018b845376e42db21da adebbieribeiro <debora-ribeiro-pereira@hotmail.com> 1754967763 -0700	commit: Add better logging
+04f9a37bb168b98233683018b845376e42db21da 610e85e554cff47f05cf0900092ad5fdb8c738f8 adebbieribeiro <debora-ribeiro-pereira@hotmail.com> 1755013631 -0700	commit: Update server files including environment configuration
