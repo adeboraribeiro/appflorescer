@@ -4,12 +4,12 @@ import { Slot, router } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Animated, DeviceEventEmitter, PanResponder, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { useSettings } from '../../contexts/SettingsContext';
-import { useTheme } from '../../contexts/ThemeContext';
-import { useUser } from '../../contexts/UserContext';
 import ConfirmDeletionModal from '../../components/ConfirmDeletionModal';
 import Header from '../../components/Header';
 import TabBar from '../../components/TabBar';
+import { useSettings } from '../../contexts/SettingsContext';
+import { useTheme } from '../../contexts/ThemeContext';
+import { useUser } from '../../contexts/UserContext';
 import supabase from '../../lib/supabase';
 
 // Lightweight in-memory cache so the ManageModules UI can reuse the already-loaded
